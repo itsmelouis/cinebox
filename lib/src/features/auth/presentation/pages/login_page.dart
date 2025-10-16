@@ -1,233 +1,243 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../viewmodels/auth_viewmodel.dart';
+import '../providers/auth_providers.dart';
 
-class LoginPage extends ConsumerStatefulWidget {
+/// Login Page - Clean Architecture version
+/// Based on original design with GitHub OAuth integration
+class LoginPage extends ConsumerWidget {
   const LoginPage({super.key});
 
   @override
-  ConsumerState<LoginPage> createState() => _LoginPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final loginState = ref.watch(loginViewModelProvider);
+    final loginViewModel = ref.read(loginViewModelProvider.notifier);
 
-class _LoginPageState extends ConsumerState<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+    // Listen to auth state changes
+    ref.listen<AsyncValue>(authStateProvider, (previous, next) {
+      next.whenData((user) {
+        if (user != null) {
+          // User is authenticated, navigate to home
+          context.go('/');
+        }
+      });
+    });
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  void _showMessage(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final authState = ref.watch(authViewModelProvider);
-    final authViewModel = ref.read(authViewModelProvider.notifier);
-
-    // Listen to state changes
-    ref.listen<AuthState>(authViewModelProvider, (previous, next) {
+    // Listen to login state for errors
+    ref.listen(loginViewModelProvider, (previous, next) {
       if (next.errorMessage != null) {
-        _showMessage(next.errorMessage!, isError: true);
-        authViewModel.clearError();
-      }
-      if (next.successMessage != null) {
-        _showMessage(next.successMessage!);
-        authViewModel.clearSuccess();
-        // Navigate to home after successful login
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            context.go('/');
-          }
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(next.errorMessage!),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        loginViewModel.clearError();
       }
     });
 
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
+      backgroundColor: Colors.black,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.black,
+              Colors.red.shade900.withOpacity(0.2),
+              Colors.black,
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo
-                  const Icon(
-                    Icons.movie_rounded,
-                    size: 80,
-                    color: Colors.blue,
-                  ),
+                  _buildLogo(),
+                  const SizedBox(height: 60),
+                  _buildTitle(),
                   const SizedBox(height: 16),
-
-                  // Title
-                  const Text(
-                    'CinéBox',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Découvre et gère ta liste de films',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-
-                  // Email field
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Email requis';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Password field
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Mot de passe',
-                      prefixIcon: const Icon(Icons.lock_outlined),
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Mot de passe requis';
-                      }
-                      return null;
-                    },
+                  _buildSubtitle(),
+                  const SizedBox(height: 60),
+                  _buildGitHubSignInButton(
+                    context,
+                    loginState.isLoading,
+                    loginViewModel,
                   ),
                   const SizedBox(height: 24),
-
-                  // Sign in button
-                  ElevatedButton(
-                    onPressed: authState.isLoading
-                        ? null
-                        : () {
-                            if (_formKey.currentState!.validate()) {
-                              authViewModel.signInWithEmail(
-                                _emailController.text.trim(),
-                                _passwordController.text,
-                              );
-                            }
-                          },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: authState.isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text(
-                            'Se connecter',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Sign up button
-                  OutlinedButton(
-                    onPressed: authState.isLoading
-                        ? null
-                        : () {
-                            context.push('/signup');
-                          },
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text(
-                      'Créer un compte',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Divider
-                  const Row(
-                    children: [
-                      Expanded(child: Divider()),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('OU'),
-                      ),
-                      Expanded(child: Divider()),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // GitHub sign in button
-                  OutlinedButton.icon(
-                    onPressed: authState.isLoading
-                        ? null
-                        : () {
-                            authViewModel.signInWithGitHub();
-                          },
-                    icon: const Icon(Icons.code),
-                    label: const Text('Continuer avec GitHub'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Skip login button
-                  TextButton(
-                    onPressed: authState.isLoading
-                        ? null
-                        : () {
-                            context.go('/');
-                          },
-                    child: const Text('Continuer sans compte'),
-                  ),
+                  _buildLegalText(),
                 ],
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogo() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [Colors.red.shade600, Colors.red.shade900],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.red.withValues(alpha: 0.3),
+            blurRadius: 20,
+            spreadRadius: 3,
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: Image.asset(
+          'assets/images/logo.png',
+          width: 70,
+          height: 70,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return const Icon(
+              Icons.movie_outlined,
+              size: 70,
+              color: Colors.white,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTitle() {
+    return ShaderMask(
+      shaderCallback: (bounds) => LinearGradient(
+        colors: [Colors.red.shade400, Colors.red.shade600],
+      ).createShader(bounds),
+      child: const Text(
+        'CineBox',
+        style: TextStyle(
+          fontSize: 56,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          letterSpacing: 2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubtitle() {
+    return Text(
+      'Découvrez des milliers de films\net séries à votre portée',
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: 16,
+        color: Colors.grey.shade300,
+        height: 1.5,
+      ),
+    );
+  }
+
+  Widget _buildGitHubSignInButton(
+    BuildContext context,
+    bool isLoading,
+    loginViewModel,
+  ) {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.red.shade600, Colors.red.shade800],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.red.withValues(alpha: 0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isLoading ? null : () => loginViewModel.signInWithGitHub(),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (isLoading)
+                  const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.code,
+                      color: Colors.black,
+                      size: 24,
+                    ),
+                  ),
+                const SizedBox(width: 16),
+                Text(
+                  isLoading
+                      ? 'Connexion en cours...'
+                      : 'Se connecter avec GitHub',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegalText() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Text(
+        'En continuant, vous acceptez nos Conditions d\'utilisation\net notre Politique de confidentialité',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.grey.shade500,
+          height: 1.5,
         ),
       ),
     );

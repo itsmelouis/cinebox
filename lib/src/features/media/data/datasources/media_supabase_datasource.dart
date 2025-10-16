@@ -88,17 +88,10 @@ class MediaSupabaseDataSourceImpl implements MediaSupabaseDataSource {
     bool? isFavorite,
   }) async {
     try {
-      var query = supabaseClient
+      dynamic query = supabaseClient
           .from('user_media')
-          .select('''
-            *,
-            media:media_id (
-              title,
-              poster_path
-            )
-          ''')
-          .eq('user_id', _userId)
-          .order('added_at', ascending: false);
+          .select('*')
+          .eq('user_id', _userId);
 
       if (status != null) {
         query = query.eq('watch_status', status.value);
@@ -110,19 +103,38 @@ class MediaSupabaseDataSourceImpl implements MediaSupabaseDataSource {
         query = query.eq('is_favorite', isFavorite);
       }
 
+      query = query.order('added_at', ascending: false);
+
       final response = await query;
 
-      return (response as List).map((json) {
-        // Flatten the joined media data
-        final mediaData = json['media'] as Map<String, dynamic>?;
-        final flattenedJson = Map<String, dynamic>.from(json);
-        if (mediaData != null) {
-          flattenedJson['title'] = mediaData['title'];
-          flattenedJson['poster_path'] = mediaData['poster_path'];
+      // Fetch media details separately for each user_media
+      final List<UserMediaModel> result = [];
+      for (final json in response as List) {
+        final userMediaJson = Map<String, dynamic>.from(json);
+        final mediaId = userMediaJson['media_id'] as int;
+        final mediaType = userMediaJson['media_type'] as String;
+        
+        // Get media details from cache
+        try {
+          final mediaResponse = await supabaseClient
+              .from('media')
+              .select('title, poster_path')
+              .eq('id', mediaId)
+              .eq('media_type', mediaType)
+              .maybeSingle();
+          
+          if (mediaResponse != null) {
+            userMediaJson['title'] = mediaResponse['title'];
+            userMediaJson['poster_path'] = mediaResponse['poster_path'];
+          }
+        } catch (_) {
+          // Continue without media details if not found
         }
-        flattenedJson.remove('media');
-        return UserMediaModel.fromJson(flattenedJson);
-      }).toList();
+        
+        result.add(UserMediaModel.fromJson(userMediaJson));
+      }
+
+      return result;
     } catch (e) {
       if (e is core_exceptions.AuthException) rethrow;
       throw core_exceptions.ServerException('Failed to get user media list: $e');
@@ -134,13 +146,7 @@ class MediaSupabaseDataSourceImpl implements MediaSupabaseDataSource {
     try {
       final response = await supabaseClient
           .from('user_media')
-          .select('''
-            *,
-            media:media_id (
-              title,
-              poster_path
-            )
-          ''')
+          .select('*')
           .eq('user_id', _userId)
           .eq('media_id', mediaId)
           .eq('media_type', mediaType)
@@ -148,16 +154,26 @@ class MediaSupabaseDataSourceImpl implements MediaSupabaseDataSource {
 
       if (response == null) return null;
 
-      // Flatten the joined media data
-      final mediaData = response['media'] as Map<String, dynamic>?;
-      final flattenedJson = Map<String, dynamic>.from(response);
-      if (mediaData != null) {
-        flattenedJson['title'] = mediaData['title'];
-        flattenedJson['poster_path'] = mediaData['poster_path'];
+      final userMediaJson = Map<String, dynamic>.from(response);
+      
+      // Get media details from cache
+      try {
+        final mediaResponse = await supabaseClient
+            .from('media')
+            .select('title, poster_path')
+            .eq('id', mediaId)
+            .eq('media_type', mediaType)
+            .maybeSingle();
+        
+        if (mediaResponse != null) {
+          userMediaJson['title'] = mediaResponse['title'];
+          userMediaJson['poster_path'] = mediaResponse['poster_path'];
+        }
+      } catch (_) {
+        // Continue without media details if not found
       }
-      flattenedJson.remove('media');
 
-      return UserMediaModel.fromJson(flattenedJson);
+      return UserMediaModel.fromJson(userMediaJson);
     } catch (e) {
       if (e is core_exceptions.AuthException) rethrow;
       throw core_exceptions.ServerException('Failed to get user media: $e');
@@ -195,25 +211,10 @@ class MediaSupabaseDataSourceImpl implements MediaSupabaseDataSource {
             data,
             onConflict: 'user_id,media_id,media_type',
           )
-          .select('''
-            *,
-            media:media_id (
-              title,
-              poster_path
-            )
-          ''')
+          .select()
           .single();
 
-      // Flatten the joined media data
-      final mediaData = response['media'] as Map<String, dynamic>?;
-      final flattenedJson = Map<String, dynamic>.from(response);
-      if (mediaData != null) {
-        flattenedJson['title'] = mediaData['title'];
-        flattenedJson['poster_path'] = mediaData['poster_path'];
-      }
-      flattenedJson.remove('media');
-
-      return UserMediaModel.fromJson(flattenedJson);
+      return UserMediaModel.fromJson(response);
     } catch (e) {
       if (e is core_exceptions.AuthException) rethrow;
       throw core_exceptions.ServerException('Failed to upsert user media: $e');

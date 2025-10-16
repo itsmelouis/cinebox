@@ -41,17 +41,21 @@ class CineBoxApp extends ConsumerWidget {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'CinéBox',
+      title: 'CineBox',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.light,
-        ),
         useMaterial3: true,
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.red,
+          brightness: Brightness.dark,
+        ),
+        scaffoldBackgroundColor: Colors.black,
+        fontFamily: 'Roboto',
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
+          backgroundColor: Colors.black,
         ),
         cardTheme: CardThemeData(
           elevation: 2,
@@ -81,14 +85,7 @@ class CineBoxApp extends ConsumerWidget {
           ),
         ),
       ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.dark,
       routerConfig: router,
     );
   }

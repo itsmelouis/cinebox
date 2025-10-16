@@ -10,6 +10,7 @@ import '../../domain/usecases/sign_in_with_email.dart';
 import '../../domain/usecases/sign_in_with_github.dart';
 import '../../domain/usecases/sign_out.dart';
 import '../../domain/usecases/sign_up_with_email.dart';
+import '../viewmodels/login_viewmodel.dart';
 
 // ============================================
 // Data Source Providers
@@ -88,4 +89,17 @@ final isAuthenticatedProvider = Provider<bool>((ref) {
 final currentUserProvider = Provider<UserEntity?>((ref) {
   final authState = ref.watch(authStateProvider);
   return authState.asData?.value;
+});
+
+// ============================================
+// ViewModel Providers
+// ============================================
+
+final loginViewModelProvider =
+    StateNotifierProvider<LoginViewModel, LoginState>((ref) {
+  final signInWithGitHub = ref.watch(signInWithGitHubProvider);
+
+  return LoginViewModel(
+    signInWithGitHub: signInWithGitHub,
+  );
 });

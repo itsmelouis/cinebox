@@ -9,7 +9,7 @@ part of 'media_model.dart';
 _$MediaModelImpl _$$MediaModelImplFromJson(Map<String, dynamic> json) =>
     _$MediaModelImpl(
       id: (json['id'] as num).toInt(),
-      mediaType: json['media_type'] as String,
+      mediaType: json['media_type'] as String?,
       title: json['title'] as String?,
       name: json['name'] as String?,
       originalTitle: json['original_title'] as String?,

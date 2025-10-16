@@ -18,8 +18,8 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   }
 
   Future<void> _checkAuth() async {
-    // Wait for splash animation
-    await Future.delayed(const Duration(seconds: 2));
+    // Wait for splash animation (reduced to 500ms)
+    await Future.delayed(const Duration(milliseconds: 500));
 
     if (!mounted) return;
 
@@ -53,46 +53,74 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Colors.blue.shade700,
-              Colors.blue.shade900,
+              Colors.black,
+              Colors.red.shade900.withOpacity(0.3),
+              Colors.black,
             ],
+            stops: const [0.0, 0.5, 1.0],
           ),
         ),
-        child: const Center(
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.movie_rounded,
-                size: 100,
-                color: Colors.white,
-              ),
-              SizedBox(height: 24),
-              Text(
-                'CinéBox',
-                style: TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
+              // Logo CineBox
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [Colors.red.shade600, Colors.red.shade900],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.red.withOpacity(0.4),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.movie_outlined,
+                  size: 80,
                   color: Colors.white,
                 ),
               ),
-              SizedBox(height: 8),
-              Text(
-                'Découvre et gère ta liste de films',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
+              const SizedBox(height: 32),
+              // Titre avec gradient
+              ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: [Colors.red.shade400, Colors.red.shade600],
+                ).createShader(bounds),
+                child: const Text(
+                  'CineBox',
+                  style: TextStyle(
+                    fontSize: 56,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 2,
+                  ),
                 ),
               ),
-              SizedBox(height: 48),
+              const SizedBox(height: 16),
+              Text(
+                'Découvrez des milliers de films',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade400,
+                ),
+              ),
+              const SizedBox(height: 48),
               CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.red.shade600),
+                strokeWidth: 3,
               ),
             ],
           ),

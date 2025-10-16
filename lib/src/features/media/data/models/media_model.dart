@@ -9,7 +9,7 @@ part 'media_model.g.dart';
 class MediaModel with _$MediaModel {
   const factory MediaModel({
     required int id,
-    @JsonKey(name: 'media_type') required String mediaType,
+    @JsonKey(name: 'media_type') String? mediaType,
     String? title,
     String? name, // TV shows use 'name' instead of 'title'
     @JsonKey(name: 'original_title') String? originalTitle,
@@ -41,7 +41,7 @@ class MediaModel with _$MediaModel {
   Media toEntity() {
     return Media(
       id: id,
-      mediaType: mediaType,
+      mediaType: mediaType ?? 'unknown',
       title: title ?? name ?? 'Unknown',
       originalTitle: originalTitle ?? originalName,
       overview: overview,
@@ -92,10 +92,15 @@ class MediaModel with _$MediaModel {
 
   /// Convert to Supabase JSON
   Map<String, dynamic> toSupabase() {
+    // mediaType is required for Supabase
+    if (mediaType == null) {
+      throw Exception('mediaType cannot be null when saving to Supabase');
+    }
+    
     return {
       'id': id,
-      'media_type': mediaType,
-      'title': title ?? name,
+      'media_type': mediaType!,
+      'title': title ?? name ?? 'Unknown',
       'original_title': originalTitle ?? originalName,
       'overview': overview,
       'poster_path': posterPath,

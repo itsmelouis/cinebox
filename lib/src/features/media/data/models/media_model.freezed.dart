@@ -22,7 +22,7 @@ MediaModel _$MediaModelFromJson(Map<String, dynamic> json) {
 mixin _$MediaModel {
   int get id => throw _privateConstructorUsedError;
   @JsonKey(name: 'media_type')
-  String get mediaType => throw _privateConstructorUsedError;
+  String? get mediaType => throw _privateConstructorUsedError;
   String? get title => throw _privateConstructorUsedError;
   String? get name =>
       throw _privateConstructorUsedError; // TV shows use 'name' instead of 'title'
@@ -69,7 +69,7 @@ abstract class $MediaModelCopyWith<$Res> {
   @useResult
   $Res call(
       {int id,
-      @JsonKey(name: 'media_type') String mediaType,
+      @JsonKey(name: 'media_type') String? mediaType,
       String? title,
       String? name,
       @JsonKey(name: 'original_title') String? originalTitle,
@@ -106,7 +106,7 @@ class _$MediaModelCopyWithImpl<$Res, $Val extends MediaModel>
   @override
   $Res call({
     Object? id = null,
-    Object? mediaType = null,
+    Object? mediaType = freezed,
     Object? title = freezed,
     Object? name = freezed,
     Object? originalTitle = freezed,
@@ -132,10 +132,10 @@ class _$MediaModelCopyWithImpl<$Res, $Val extends MediaModel>
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as int,
-      mediaType: null == mediaType
+      mediaType: freezed == mediaType
           ? _value.mediaType
           : mediaType // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
       title: freezed == title
           ? _value.title
           : title // ignore: cast_nullable_to_non_nullable
@@ -226,7 +226,7 @@ abstract class _$$MediaModelImplCopyWith<$Res>
   @useResult
   $Res call(
       {int id,
-      @JsonKey(name: 'media_type') String mediaType,
+      @JsonKey(name: 'media_type') String? mediaType,
       String? title,
       String? name,
       @JsonKey(name: 'original_title') String? originalTitle,
@@ -261,7 +261,7 @@ class __$$MediaModelImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? mediaType = null,
+    Object? mediaType = freezed,
     Object? title = freezed,
     Object? name = freezed,
     Object? originalTitle = freezed,
@@ -287,10 +287,10 @@ class __$$MediaModelImplCopyWithImpl<$Res>
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as int,
-      mediaType: null == mediaType
+      mediaType: freezed == mediaType
           ? _value.mediaType
           : mediaType // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
       title: freezed == title
           ? _value.title
           : title // ignore: cast_nullable_to_non_nullable
@@ -376,7 +376,7 @@ class __$$MediaModelImplCopyWithImpl<$Res>
 class _$MediaModelImpl extends _MediaModel {
   const _$MediaModelImpl(
       {required this.id,
-      @JsonKey(name: 'media_type') required this.mediaType,
+      @JsonKey(name: 'media_type') this.mediaType,
       this.title,
       this.name,
       @JsonKey(name: 'original_title') this.originalTitle,
@@ -408,7 +408,7 @@ class _$MediaModelImpl extends _MediaModel {
   final int id;
   @override
   @JsonKey(name: 'media_type')
-  final String mediaType;
+  final String? mediaType;
   @override
   final String? title;
   @override
@@ -566,7 +566,7 @@ class _$MediaModelImpl extends _MediaModel {
 abstract class _MediaModel extends MediaModel {
   const factory _MediaModel(
       {required final int id,
-      @JsonKey(name: 'media_type') required final String mediaType,
+      @JsonKey(name: 'media_type') final String? mediaType,
       final String? title,
       final String? name,
       @JsonKey(name: 'original_title') final String? originalTitle,
@@ -596,7 +596,7 @@ abstract class _MediaModel extends MediaModel {
   int get id;
   @override
   @JsonKey(name: 'media_type')
-  String get mediaType;
+  String? get mediaType;
   @override
   String? get title;
   @override

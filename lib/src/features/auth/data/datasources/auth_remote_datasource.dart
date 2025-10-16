@@ -49,7 +49,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await supabaseClient.auth.signInWithOAuth(
         OAuthProvider.github,
-        redirectTo: 'io.supabase.cinebox://login-callback',
+        redirectTo: 'cinebox://login-callback',
       );
 
       if (!response) {
