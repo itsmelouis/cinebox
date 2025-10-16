@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/auth/presentation/pages/home_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
+import '../../features/media/presentation/pages/discovery_page.dart';
+import '../../features/media/presentation/pages/media_detail_page.dart';
+import '../../features/media/presentation/pages/my_list_page.dart';
 
 /// App router with authentication guards
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -62,7 +64,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/',
         name: 'home',
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) => const DiscoveryPage(),
       ),
 
       // Search (public)
@@ -83,10 +85,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final type = state.pathParameters['type']!;
           final id = int.parse(state.pathParameters['id']!);
-          return Scaffold(
-            body: Center(
-              child: Text('Media Detail Page - Type: $type, ID: $id\nÀ implémenter par votre collègue'),
-            ),
+          return MediaDetailPage(
+            mediaId: id,
+            mediaType: type,
           );
         },
       ),
@@ -95,11 +96,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/my-list',
         name: 'my-list',
-        builder: (context, state) => const Scaffold(
-          body: Center(
-            child: Text('My List Page - Protected\nÀ implémenter par votre collègue'),
-          ),
-        ),
+        builder: (context, state) => const MyListPage(),
       ),
 
       // Profile (protected)

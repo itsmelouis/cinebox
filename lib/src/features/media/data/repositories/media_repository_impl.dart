@@ -36,13 +36,16 @@ class MediaRepositoryImpl implements MediaRepository {
       }
 
       // 2. Fetch from TMDB
-      final MediaModel mediaModel;
+      MediaModel mediaModel;
       if (mediaType == 'movie') {
         mediaModel = await tmdbDataSource.getMovieDetails(
           id,
           language,
           'watch/providers',
         );
+        
+        // Set mediaType explicitly (TMDB doesn't return it in detail endpoints)
+        mediaModel = mediaModel.copyWith(mediaType: 'movie');
         
         // Get watch providers
         try {
@@ -66,6 +69,9 @@ class MediaRepositoryImpl implements MediaRepository {
           language,
           'watch/providers',
         );
+        
+        // Set mediaType explicitly (TMDB doesn't return it in detail endpoints)
+        mediaModel = mediaModel.copyWith(mediaType: 'tv');
         
         // Get watch providers
         try {
@@ -260,13 +266,50 @@ class MediaRepositoryImpl implements MediaRepository {
     bool? isFavorite,
   }) async {
     try {
-      // Ensure media exists in cache
-      await getMediaById(
+      // First, fetch and cache the media details from TMDB
+      final mediaResult = await getMediaById(
         id: mediaId,
         mediaType: mediaType,
       );
 
-      // Continue even if media fetch fails (might already be cached)
+      // If media fetch succeeds, cache it in Supabase
+      // This is REQUIRED because user_media has a foreign key to media table
+      final cacheResult = await mediaResult.fold(
+        (failure) async {
+          // If fetch fails, media might already be cached, so continue
+          return null;
+        },
+        (media) async {
+          try {
+            // Create a proper MediaModel with all required fields
+            final mediaModel = MediaModel(
+              id: media.id,
+              mediaType: mediaType, // Use the parameter, not media.mediaType which might be 'unknown'
+              title: media.title,
+              originalTitle: media.originalTitle,
+              overview: media.overview,
+              posterPath: media.posterPath,
+              backdropPath: media.backdropPath,
+              releaseDate: media.releaseDate?.toIso8601String().split('T')[0],
+              voteAverage: media.voteAverage,
+              voteCount: media.voteCount,
+              popularity: media.popularity,
+              originalLanguage: media.originalLanguage,
+            );
+            
+            await supabaseDataSource.cacheMedia(mediaModel);
+            return null;
+          } catch (e) {
+            // Return error to handle it properly
+            return e.toString();
+          }
+        },
+      );
+      
+      // If cache failed with an error, return it
+      if (cacheResult != null) {
+        return Left(Failure.unexpected('Failed to cache media: $cacheResult'));
+      }
       
       final userMediaModel = await supabaseDataSource.upsertUserMedia(
         mediaId: mediaId,
