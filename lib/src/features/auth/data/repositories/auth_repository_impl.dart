@@ -93,6 +93,18 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failure, void>> deleteAccount() async {
+    try {
+      await remoteDataSource.deleteAccount();
+      return const Right(null);
+    } on AuthException catch (e) {
+      return Left(Failure.auth(e.message));
+    } catch (e) {
+      return Left(Failure.unexpected(e.toString()));
+    }
+  }
+
+  @override
   Future<String?> getAccessToken() async {
     return remoteDataSource.getAccessToken();
   }

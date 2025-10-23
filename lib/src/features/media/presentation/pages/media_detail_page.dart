@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../app/widgets/auth_required_dialog.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../domain/entities/media.dart';
 import '../../domain/entities/user_media.dart';
 import '../providers/media_providers.dart';
 
@@ -312,9 +316,23 @@ class _MediaDetailPageState extends ConsumerState<MediaDetailPage> {
         child: InkWell(
           onTap: state.isSaving
               ? null
-              : () => isInList 
-                  ? _showManageModal(context, media, state)
-                  : _addToList(context, media),
+              : () {
+                  if (isInList) {
+                    _showManageModal(context, media, state);
+                  } else {
+                    // Check auth before adding to list
+                    final currentUser = ref.read(currentUserProvider);
+                    if (currentUser == null) {
+                      AuthRequiredDialog.show(
+                        context,
+                        title: 'Connexion requise',
+                        message: 'Connectez-vous pour ajouter ce contenu à votre liste',
+                      );
+                    } else {
+                      _addToList(context, media);
+                    }
+                  }
+                },
           borderRadius: BorderRadius.circular(16),
           child: Center(
             child: state.isSaving

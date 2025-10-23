@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_providers.dart';
 
@@ -202,22 +203,27 @@ class LoginPage extends ConsumerWidget {
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.code,
+                    child: const FaIcon(
+                      FontAwesomeIcons.github,
                       color: Colors.black,
                       size: 24,
                     ),
                   ),
-                const SizedBox(width: 16),
-                Text(
-                  isLoading
-                      ? 'Connexion en cours...'
-                      : 'Se connecter avec GitHub',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Text(
+                    isLoading
+                        ? 'Connexion en cours...'
+                        : 'Se connecter avec GitHub',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.visible,
                   ),
                 ),
               ],

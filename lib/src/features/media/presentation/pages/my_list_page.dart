@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/user_media.dart';
 import '../providers/media_providers.dart';
 
@@ -24,7 +25,73 @@ class _MyListPageState extends ConsumerState<MyListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = ref.watch(currentUserProvider);
     final state = ref.watch(myListViewModelProvider);
+
+    // If user is not authenticated, show login prompt
+    if (currentUser == null) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          title: Text(
+            'Ma liste',
+            style: TextStyle(
+              color: Colors.red.shade600,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.bookmark_outline,
+                size: 80,
+                color: Colors.grey.shade700,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Connectez-vous pour accéder à votre liste',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade400,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Sauvegardez vos films et séries préférés',
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () => context.push('/login'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade600,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Se connecter',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -43,7 +110,11 @@ class _MyListPageState extends ConsumerState<MyListPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline, size: 64, color: Colors.red.shade600),
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red.shade600,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       state.errorMessage!,
@@ -60,7 +131,11 @@ class _MyListPageState extends ConsumerState<MyListPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.movie_outlined, size: 80, color: Colors.grey.shade700),
+                    Icon(
+                      Icons.movie_outlined,
+                      size: 80,
+                      color: Colors.grey.shade700,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'Votre liste est vide',
@@ -72,7 +147,7 @@ class _MyListPageState extends ConsumerState<MyListPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Ajoutez des films et séries depuis la page Découvrir',
+                      'Ajoutez des films et séries en naviguant sur notre catalogue !',
                       style: TextStyle(
                         color: Colors.grey.shade600,
                         fontSize: 14,
@@ -87,13 +162,10 @@ class _MyListPageState extends ConsumerState<MyListPage> {
             SliverPadding(
               padding: const EdgeInsets.all(16),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final userMedia = state.mediaList[index];
-                    return _buildMediaCard(context, userMedia);
-                  },
-                  childCount: state.mediaList.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final userMedia = state.mediaList[index];
+                  return _buildMediaCard(context, userMedia);
+                }, childCount: state.mediaList.length),
               ),
             ),
         ],
@@ -121,18 +193,35 @@ class _MyListPageState extends ConsumerState<MyListPage> {
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(72),
         child: Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 16),
+          padding: const EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 8,
+            bottom: 16,
+          ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
                 _buildFilterChip('Tous', null, state.selectedFilter),
                 const SizedBox(width: 8),
-                _buildFilterChip('À voir', WatchStatus.toWatch, state.selectedFilter),
+                _buildFilterChip(
+                  'À voir',
+                  WatchStatus.toWatch,
+                  state.selectedFilter,
+                ),
                 const SizedBox(width: 8),
-                _buildFilterChip('En cours', WatchStatus.watching, state.selectedFilter),
+                _buildFilterChip(
+                  'En cours',
+                  WatchStatus.watching,
+                  state.selectedFilter,
+                ),
                 const SizedBox(width: 8),
-                _buildFilterChip('Vus', WatchStatus.watched, state.selectedFilter),
+                _buildFilterChip(
+                  'Vus',
+                  WatchStatus.watched,
+                  state.selectedFilter,
+                ),
               ],
             ),
           ),
@@ -141,7 +230,11 @@ class _MyListPageState extends ConsumerState<MyListPage> {
     );
   }
 
-  Widget _buildFilterChip(String label, WatchStatus? status, WatchStatus? selectedFilter) {
+  Widget _buildFilterChip(
+    String label,
+    WatchStatus? status,
+    WatchStatus? selectedFilter,
+  ) {
     final isSelected = status == selectedFilter;
     return FilterChip(
       label: Text(label),
@@ -220,11 +313,18 @@ class _MyListPageState extends ConsumerState<MyListPage> {
                     const SizedBox(height: 8),
                     // Status chip
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: _getStatusColor(userMedia.watchStatus).withOpacity(0.2),
+                        color: _getStatusColor(
+                          userMedia.watchStatus,
+                        ).withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: _getStatusColor(userMedia.watchStatus)),
+                        border: Border.all(
+                          color: _getStatusColor(userMedia.watchStatus),
+                        ),
                       ),
                       child: Text(
                         _getStatusLabel(userMedia.watchStatus),
@@ -252,7 +352,8 @@ class _MyListPageState extends ConsumerState<MyListPage> {
                         ],
                       ),
                     ],
-                    if (userMedia.myReview != null && userMedia.myReview!.isNotEmpty) ...[
+                    if (userMedia.myReview != null &&
+                        userMedia.myReview!.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Text(
                         userMedia.myReview!,
@@ -301,15 +402,15 @@ class _MyListPageState extends ConsumerState<MyListPage> {
     }
   }
 
-  Future<void> _showDeleteDialog(BuildContext context, UserMedia userMedia) async {
+  Future<void> _showDeleteDialog(
+    BuildContext context,
+    UserMedia userMedia,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey.shade900,
-        title: const Text(
-          'Supprimer',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('Supprimer', style: TextStyle(color: Colors.white)),
         content: Text(
           'Voulez-vous vraiment supprimer "${userMedia.title}" de votre liste ?',
           style: TextStyle(color: Colors.grey.shade300),
@@ -324,10 +425,7 @@ class _MyListPageState extends ConsumerState<MyListPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Supprimer',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
