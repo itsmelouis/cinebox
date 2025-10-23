@@ -30,6 +30,9 @@ abstract class AuthRepository {
   /// Sign out
   Future<Either<Failure, void>> signOut();
 
+  /// Delete account
+  Future<Either<Failure, void>> deleteAccount();
+
   /// Get current access token (JWT)
   Future<String?> getAccessToken();
 

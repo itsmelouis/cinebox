@@ -17,6 +17,7 @@ abstract class AuthRemoteDataSource {
     String? displayName,
   });
   Future<void> signOut();
+  Future<void> deleteAccount();
   Future<String?> getAccessToken();
   bool get isAuthenticated;
 }
@@ -56,10 +57,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw core_exceptions.AuthException('GitHub sign in was cancelled or failed');
       }
 
-      // Wait for auth state to update
-      await Future.delayed(const Duration(seconds: 1));
+      // Wait for auth state to update by listening to the stream
+      final user = await supabaseClient.auth.onAuthStateChange
+          .firstWhere((event) => event.session != null)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw core_exceptions.AuthException(
+              'GitHub sign in timed out',
+            ),
+          )
+          .then((event) => event.session?.user);
 
-      final user = supabaseClient.auth.currentUser;
       if (user == null) {
         throw core_exceptions.AuthException('No user after GitHub sign in');
       }
@@ -128,6 +136,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       await supabaseClient.auth.signOut();
     } catch (e) {
       throw core_exceptions.AuthException('Sign out failed: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    try {
+      // Call the RPC function to delete the user
+      await supabaseClient.rpc('deleteUser');
+      // Sign out after deletion
+      await supabaseClient.auth.signOut();
+    } catch (e) {
+      throw core_exceptions.AuthException('Account deletion failed: $e');
     }
   }
 

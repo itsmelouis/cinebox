@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/auth/presentation/pages/login_page.dart';
-import '../../features/auth/presentation/pages/signup_page.dart';
+import '../../features/auth/presentation/pages/auth_page.dart';
+import '../../features/auth/presentation/pages/profile_page.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
-import '../../features/media/presentation/pages/discovery_page.dart';
+import '../../features/media/presentation/pages/home_page.dart';
 import '../../features/media/presentation/pages/media_detail_page.dart';
 import '../../features/media/presentation/pages/my_list_page.dart';
+import '../../features/media/presentation/pages/search_page.dart';
+import '../widgets/main_navigation_shell.dart';
 
-/// App router with authentication guards
+/// App router with bottom navigation and public access
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
 
@@ -17,28 +19,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/splash',
     debugLogDiagnostics: true,
     redirect: (context, state) {
-      final isAuthenticated = authState.asData?.value != null;
-      final isAuthRoute = state.matchedLocation == '/login' ||
-          state.matchedLocation == '/signup' ||
-          state.matchedLocation == '/splash';
+      final isSplash = state.matchedLocation == '/splash';
 
-      // Protected routes that require authentication
-      final protectedRoutes = ['/my-list', '/profile'];
-      final isProtectedRoute = protectedRoutes.any(
-        (route) => state.matchedLocation.startsWith(route),
-      );
-
-      // If trying to access protected route without auth, redirect to login
-      if (isProtectedRoute && !isAuthenticated) {
-        return '/login';
+      // Only redirect from splash after auth state is loaded
+      if (isSplash && authState.hasValue) {
+        return '/'; // Go to home after splash
       }
 
-      // If authenticated and trying to access auth routes, redirect to home
-      if (isAuthenticated && isAuthRoute && state.matchedLocation != '/splash') {
-        return '/';
-      }
-
-      return null; // No redirect needed
+      return null; // No redirect needed - pages handle auth themselves
     },
     routes: [
       // Splash
@@ -48,37 +36,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SplashPage(),
       ),
 
-      // Auth routes
+      // Auth route (full screen, no navbar)
       GoRoute(
         path: '/login',
         name: 'login',
-        builder: (context, state) => const LoginPage(),
-      ),
-      GoRoute(
-        path: '/signup',
-        name: 'signup',
-        builder: (context, state) => const SignUpPage(),
+        builder: (context, state) => const AuthPage(),
       ),
 
-      // Home / Discover (public)
-      GoRoute(
-        path: '/',
-        name: 'home',
-        builder: (context, state) => const DiscoveryPage(),
-      ),
-
-      // Search (public)
-      GoRoute(
-        path: '/search',
-        name: 'search',
-        builder: (context, state) => const Scaffold(
-          body: Center(
-            child: Text('Search Page - À implémenter par votre collègue'),
-          ),
-        ),
-      ),
-
-      // Media detail (public)
+      // Media detail (full screen, no navbar)
       GoRoute(
         path: '/media/:type/:id',
         name: 'media-detail',
@@ -92,22 +57,64 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // My list (protected)
-      GoRoute(
-        path: '/my-list',
-        name: 'my-list',
-        builder: (context, state) => const MyListPage(),
-      ),
-
-      // Profile (protected)
-      GoRoute(
-        path: '/profile',
-        name: 'profile',
-        builder: (context, state) => const Scaffold(
-          body: Center(
-            child: Text('Profile Page - Protected\nÀ implémenter par votre collègue'),
+      // Main shell with bottom navigation
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return MainNavigationShell(navigationShell: navigationShell);
+        },
+        branches: [
+          // Branch 1: Home
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/',
+                name: 'home',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                  child: HomePage(),
+                ),
+              ),
+            ],
           ),
-        ),
+
+          // Branch 2: Search
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/search',
+                name: 'search',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                  child: SearchPage(),
+                ),
+              ),
+            ],
+          ),
+
+          // Branch 3: My List
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/my-list',
+                name: 'my-list',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                  child: MyListPage(),
+                ),
+              ),
+            ],
+          ),
+
+          // Branch 4: Profile
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/profile',
+                name: 'profile',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                  child: ProfilePage(),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

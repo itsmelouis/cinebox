@@ -4,6 +4,7 @@ import '../../data/datasources/auth_remote_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/usecases/delete_account.dart';
 import '../../domain/usecases/get_current_user.dart';
 import '../../domain/usecases/observe_auth_state.dart';
 import '../../domain/usecases/sign_in_with_email.dart';
@@ -66,6 +67,11 @@ final signUpWithEmailProvider = Provider<SignUpWithEmail>((ref) {
 final signOutProvider = Provider<SignOut>((ref) {
   final repository = ref.watch(authRepositoryProvider);
   return SignOut(repository);
+});
+
+final deleteAccountProvider = Provider<DeleteAccount>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  return DeleteAccount(repository);
 });
 
 // ============================================
